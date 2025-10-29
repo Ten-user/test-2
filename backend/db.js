@@ -13,7 +13,7 @@ const pool = new Pool({
 export default {
   query: async (sql, params) => {
     const result = await pool.query(sql, params);
-    return result.rows;
+    return result.rows; // always return rows
   },
   pool
 };
