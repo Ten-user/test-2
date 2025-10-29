@@ -1,19 +1,19 @@
 const express = require('express');
 const router = express.Router();
-const { pool } = require('../db'); // ✅ destructure pool correctly
+const db = require('../db'); // now uses PostgreSQL pool
 
 // Create attendance record
 router.post('/', async (req, res) => {
   try {
     const { employeeName, employeeID, date, status } = req.body;
-    const [result] = await pool.execute(
-      `INSERT INTO Attendance (employeeName, employeeID, date, status)
-       VALUES (?, ?, ?, ?)`,
-      [employeeName, employeeID, date, status]
-    );
+    
+    const insertQuery = `
+      INSERT INTO attendance (employee_name, employee_id, date, status)
+      VALUES ($1, $2, $3, $4)
+      RETURNING *;
+    `;
 
-    // Get the inserted record
-    const [rows] = await pool.execute('SELECT * FROM Attendance WHERE id = ?', [result.insertId]);
+    const rows = await db.query(insertQuery, [employeeName, employeeID, date, status]);
     res.status(201).json(rows[0]);
   } catch (err) {
     console.error(err);
@@ -25,22 +25,22 @@ router.post('/', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const { search, date } = req.query;
-    let q = 'SELECT * FROM Attendance';
+    let q = 'SELECT * FROM attendance';
     const clauses = [];
     const params = [];
 
     if (search) {
-      clauses.push('(employeeName LIKE ? OR employeeID LIKE ?)');
+      clauses.push('(employee_name ILIKE $' + (params.length + 1) + ' OR CAST(employee_id AS TEXT) ILIKE $' + (params.length + 2) + ')');
       params.push(`%${search}%`, `%${search}%`);
     }
     if (date) {
-      clauses.push('date = ?');
+      clauses.push(`date = $${params.length + 1}`);
       params.push(date);
     }
     if (clauses.length) q += ' WHERE ' + clauses.join(' AND ');
-    q += ' ORDER BY date DESC, employeeName ASC';
+    q += ' ORDER BY date DESC, employee_name ASC';
 
-    const [rows] = await pool.execute(q, params);
+    const rows = await db.query(q, params);
     res.json(rows);
   } catch (err) {
     console.error(err);
@@ -52,9 +52,10 @@ router.get('/', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const id = req.params.id;
-    const [result] = await pool.execute('DELETE FROM Attendance WHERE id = ?', [id]);
+    const deleteQuery = 'DELETE FROM attendance WHERE id = $1 RETURNING *';
+    const rows = await db.query(deleteQuery, [id]);
 
-    if (result.affectedRows === 0) 
+    if (rows.length === 0) 
       return res.status(404).json({ error: 'Not found' });
 
     res.json({ deletedId: id });
