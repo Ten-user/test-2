@@ -1,20 +1,21 @@
-const express = require('express');
+import express from 'express';
+import db from '../db.js';
+
 const router = express.Router();
-const db = require('../db'); // now uses PostgreSQL pool
 
 // Create attendance record
 router.post('/', async (req, res) => {
   try {
     const { employeeName, employeeID, date, status } = req.body;
-    
+
     const insertQuery = `
       INSERT INTO attendance (employee_name, employee_id, date, status)
       VALUES ($1, $2, $3, $4)
       RETURNING *;
     `;
 
-    const rows = await db.query(insertQuery, [employeeName, employeeID, date, status]);
-    res.status(201).json(rows[0]);
+    const inserted = await db.query(insertQuery, [employeeName, employeeID, date, status]);
+    res.status(201).json(inserted[0]); // return the first row
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to create attendance' });
@@ -25,22 +26,23 @@ router.post('/', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const { search, date } = req.query;
-    let q = 'SELECT * FROM attendance';
+    let query = 'SELECT * FROM attendance';
     const clauses = [];
     const params = [];
 
     if (search) {
-      clauses.push('(employee_name ILIKE $' + (params.length + 1) + ' OR CAST(employee_id AS TEXT) ILIKE $' + (params.length + 2) + ')');
       params.push(`%${search}%`, `%${search}%`);
+      clauses.push(`(employee_name ILIKE $${params.length - 1} OR CAST(employee_id AS TEXT) ILIKE $${params.length})`);
     }
     if (date) {
-      clauses.push(`date = $${params.length + 1}`);
       params.push(date);
+      clauses.push(`date = $${params.length}`);
     }
-    if (clauses.length) q += ' WHERE ' + clauses.join(' AND ');
-    q += ' ORDER BY date DESC, employee_name ASC';
 
-    const rows = await db.query(q, params);
+    if (clauses.length) query += ' WHERE ' + clauses.join(' AND ');
+    query += ' ORDER BY date DESC, employee_name ASC';
+
+    const rows = await db.query(query, params);
     res.json(rows);
   } catch (err) {
     console.error(err);
@@ -51,7 +53,7 @@ router.get('/', async (req, res) => {
 // Delete record
 router.delete('/:id', async (req, res) => {
   try {
-    const id = req.params.id;
+    const { id } = req.params;
     const deleteQuery = 'DELETE FROM attendance WHERE id = $1 RETURNING *';
     const rows = await db.query(deleteQuery, [id]);
 
@@ -65,4 +67,4 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
