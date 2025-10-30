@@ -1,7 +1,6 @@
-import pkg from 'pg';
-import dotenv from 'dotenv';
+const pkg = require('pg');
+require('dotenv').config();
 
-dotenv.config();
 const { Pool } = pkg;
 
 // create a PostgreSQL pool
@@ -10,7 +9,7 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false } // required for Neon
 });
 
-export default {
+module.exports = {
   query: async (sql, params) => {
     const result = await pool.query(sql, params);
     return result.rows; // always return rows
