@@ -19,7 +19,7 @@ export default function AttendanceForm() {
     }
 
     try {
-      await api.post('', { employeeName, employeeID, date, status }); // '' because API_BASE already includes /attendance
+      await api.post('', { employeeName, employeeID, date, status });
       setMsgType('success');
       setMsg('Attendance recorded.');
       setEmployeeName('');
@@ -30,7 +30,8 @@ export default function AttendanceForm() {
     } catch (err) {
       console.error(err);
       setMsgType('error');
-      setMsg('Failed to submit attendance.');
+      // Show backend error message if available
+      setMsg(err.message.includes('Employee ID') ? 'Employee ID already exists' : 'Failed to submit attendance.');
     }
   };
 
