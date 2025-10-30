@@ -1,4 +1,5 @@
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000/api/attendance';
+// api.js
+const API_BASE = process.env.REACT_APP_API_URL || 'https://test-2-ccf0.onrender.com/api/attendance';
 
 async function request(path = '', options = {}) {
   const res = await fetch(API_BASE + path, {
@@ -6,7 +7,7 @@ async function request(path = '', options = {}) {
     ...options,
   });
 
-  if (res.status === 204) return null;
+  if (res.status === 204) return null; // no content
 
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'API error');
