@@ -1,5 +1,5 @@
-import express from 'express';
-import db from '../db.js';
+const express = require('express');
+const db = require('../db'); // CommonJS import
 
 const router = express.Router();
 
@@ -67,4 +67,4 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;
