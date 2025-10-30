@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import api from './api';
 
 export default function Dashboard() {
@@ -7,13 +7,13 @@ export default function Dashboard() {
   const [dateFilter, setDateFilter] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // useCallback to prevent recreating the function on every render
-  const fetchData = useCallback(async () => {
+  // Fetch data from backend
+  const fetchData = async (searchParam = '', dateParam = '') => {
     setLoading(true);
     try {
       const queryParams = new URLSearchParams();
-      if (search.trim()) queryParams.append('search', search.trim());
-      if (dateFilter) queryParams.append('date', dateFilter);
+      if (searchParam.trim()) queryParams.append('search', searchParam.trim());
+      if (dateParam) queryParams.append('date', dateParam);
 
       const path = queryParams.toString() ? `?${queryParams.toString()}` : '';
       const data = await api.get(path);
@@ -24,28 +24,32 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-  }, [search, dateFilter]);
+  };
 
+  // Initial fetch when component mounts
   useEffect(() => {
-    // initial fetch
     fetchData();
-
-    // listen for new attendance events
+    
+    // Listen for new attendance additions
     const handler = () => fetchData();
     window.addEventListener('attendance-updated', handler);
-
     return () => window.removeEventListener('attendance-updated', handler);
-  }, [fetchData]);
+  }, []);
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this record?')) return;
     try {
       await api.delete(`/${id}`);
-      fetchData();
+      fetchData(search, dateFilter); // refresh after delete
     } catch (err) {
       console.error('Failed to delete record:', err);
       alert('Failed to delete');
     }
+  };
+
+  const handleFilter = (e) => {
+    e.preventDefault();
+    fetchData(search, dateFilter); // fetch only when filter button is pressed
   };
 
   const formatDate = (d) => new Date(d).toISOString().split('T')[0];
@@ -55,13 +59,7 @@ export default function Dashboard() {
       <div className="card-body">
         <h5 className="card-title">Attendance Dashboard</h5>
 
-        <form
-          className="row g-2 mb-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            fetchData();
-          }}
-        >
+        <form className="row g-2 mb-3" onSubmit={handleFilter}>
           <div className="col-6">
             <input
               className="form-control"
