@@ -56,7 +56,7 @@ export default function App() {
         <footer>
           <p>
             &copy; {new Date().getFullYear()} Employee Attendance Tracker. |  
-            <a> Contact us here: +266 6349 9077</a>
+            <a> Contact us here: +266 6349 9075</a>
           </p>
         </footer>
       </div>
