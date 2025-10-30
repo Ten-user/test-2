@@ -19,7 +19,7 @@ export default function AttendanceForm() {
     }
 
     try {
-      await api.post('', { employeeName, employeeID, date, status });
+      await api.post('', { employeeName, employeeID, date, status }); // '' because API_BASE already includes /attendance
       setMsgType('success');
       setMsg('Attendance recorded.');
       setEmployeeName('');
@@ -34,15 +34,8 @@ export default function AttendanceForm() {
     }
   };
 
-  const handleNameChange = (e) => {
-    const value = e.target.value;
-    setEmployeeName(value.replace(/[^a-zA-Z\s]/g, ''));
-  };
-
-  const handleIDChange = (e) => {
-    const value = e.target.value;
-    setEmployeeID(value.replace(/[^0-9]/g, ''));
-  };
+  const handleNameChange = (e) => setEmployeeName(e.target.value.replace(/[^a-zA-Z\s]/g, ''));
+  const handleIDChange = (e) => setEmployeeID(e.target.value.replace(/[^0-9]/g, ''));
 
   return (
     <form onSubmit={submit}>
@@ -55,6 +48,7 @@ export default function AttendanceForm() {
           placeholder="Enter name"
         />
       </div>
+
       <div className="mb-3">
         <label className="form-label">Employee ID</label>
         <input
@@ -64,6 +58,7 @@ export default function AttendanceForm() {
           placeholder="Enter ID"
         />
       </div>
+
       <div className="mb-3">
         <label className="form-label">Date</label>
         <input
@@ -73,6 +68,7 @@ export default function AttendanceForm() {
           onChange={e => setDate(e.target.value)}
         />
       </div>
+
       <div className="mb-3">
         <label className="form-label">Status</label>
         <select
