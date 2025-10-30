@@ -18,6 +18,10 @@ router.post('/', async (req, res) => {
     res.status(201).json(inserted[0]); // return the first row
   } catch (err) {
     console.error(err);
+    // Check for unique constraint violation (PostgreSQL code 23505)
+    if (err.code === '23505') {
+      return res.status(400).json({ error: 'Employee ID already exists' });
+    }
     res.status(500).json({ error: 'Failed to create attendance' });
   }
 });
@@ -32,7 +36,6 @@ router.get('/', async (req, res) => {
 
     if (search) {
       params.push(`%${search}%`, `%${search}%`);
-      // Fix parameter indexes for PostgreSQL ($1, $2, ...)
       clauses.push(`(employee_name ILIKE $${params.length - 1} OR CAST(employee_id AS TEXT) ILIKE $${params.length})`);
     }
     if (date) {
