@@ -6,10 +6,12 @@ export default function Dashboard() {
   const [search, setSearch] = useState('');
   const [dateFilter, setDateFilter] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   // Fetch data from backend
   const fetchData = async (searchParam = '', dateParam = '') => {
     setLoading(true);
+    setError('');
     try {
       const queryParams = new URLSearchParams();
       if (searchParam.trim()) queryParams.append('search', searchParam.trim());
@@ -20,6 +22,7 @@ export default function Dashboard() {
       setRecords(data || []);
     } catch (err) {
       console.error('Failed to fetch attendance:', err);
+      setError('Failed to fetch attendance records. Please try again later.');
       setRecords([]);
     } finally {
       setLoading(false);
@@ -29,7 +32,7 @@ export default function Dashboard() {
   // Initial fetch when component mounts
   useEffect(() => {
     fetchData();
-    
+
     // Listen for new attendance additions
     const handler = () => fetchData();
     window.addEventListener('attendance-updated', handler);
@@ -43,13 +46,20 @@ export default function Dashboard() {
       fetchData(search, dateFilter); // refresh after delete
     } catch (err) {
       console.error('Failed to delete record:', err);
-      alert('Failed to delete');
+      alert('Failed to delete this record.');
     }
   };
 
   const handleFilter = (e) => {
     e.preventDefault();
     fetchData(search, dateFilter); // fetch only when filter button is pressed
+  };
+
+  // ✅ Restrict search input to only letters, numbers, and spaces
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    const validValue = value.replace(/[^a-zA-Z0-9\s]/g, ''); // block special chars
+    setSearch(validValue);
   };
 
   const formatDate = (d) => new Date(d).toISOString().split('T')[0];
@@ -65,7 +75,8 @@ export default function Dashboard() {
               className="form-control"
               placeholder="Search name or ID"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={handleSearchChange}
+              title="Only letters, numbers, and spaces are allowed"
             />
           </div>
           <div className="col-4">
@@ -77,11 +88,13 @@ export default function Dashboard() {
             />
           </div>
           <div className="col-2 d-grid">
-            <button className="btn btn-outline-primary" type="submit">
-              Filter
+            <button className="btn btn-outline-primary" type="submit" disabled={loading}>
+              {loading ? 'Filtering...' : 'Filter'}
             </button>
           </div>
         </form>
+
+        {error && <div className="alert alert-danger py-2">{error}</div>}
 
         {loading ? (
           <div>Loading...</div>
@@ -101,7 +114,7 @@ export default function Dashboard() {
                 {records.length === 0 && (
                   <tr>
                     <td colSpan="5" className="text-center">
-                      No records
+                      No records found
                     </td>
                   </tr>
                 )}
