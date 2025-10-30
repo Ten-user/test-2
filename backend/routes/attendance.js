@@ -32,6 +32,7 @@ router.get('/', async (req, res) => {
 
     if (search) {
       params.push(`%${search}%`, `%${search}%`);
+      // Fix parameter indexes for PostgreSQL ($1, $2, ...)
       clauses.push(`(employee_name ILIKE $${params.length - 1} OR CAST(employee_id AS TEXT) ILIKE $${params.length})`);
     }
     if (date) {
