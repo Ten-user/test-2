@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import api from './api';
 
 export default function Dashboard() {
@@ -7,62 +7,67 @@ export default function Dashboard() {
   const [dateFilter, setDateFilter] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const fetchData = async () => {
+  // useCallback to prevent recreating the function on every render
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (search) params.append('search', search.trim());
-      if (dateFilter) params.append('date', dateFilter);
-      const data = await api.get('/attendance?' + params.toString());
+      const queryParams = new URLSearchParams();
+      if (search.trim()) queryParams.append('search', search.trim());
+      if (dateFilter) queryParams.append('date', dateFilter);
+
+      const path = queryParams.toString() ? `?${queryParams.toString()}` : '';
+      const data = await api.get(path);
       setRecords(data || []);
     } catch (err) {
-      console.error(err);
+      console.error('Failed to fetch attendance:', err);
       setRecords([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [search, dateFilter]);
 
   useEffect(() => {
+    // initial fetch
     fetchData();
+
+    // listen for new attendance events
     const handler = () => fetchData();
     window.addEventListener('attendance-updated', handler);
+
     return () => window.removeEventListener('attendance-updated', handler);
-  }, []); // eslint-disable-line
+  }, [fetchData]);
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this record?')) return;
     try {
-      await api.delete('/attendance/' + id);
+      await api.delete(`/${id}`);
       fetchData();
     } catch (err) {
-      console.error(err);
+      console.error('Failed to delete record:', err);
       alert('Failed to delete');
     }
   };
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    fetchData();
-  };
-
-  const formatDate = (d) => {
-    const dateObj = new Date(d);
-    return dateObj.toISOString().split('T')[0];
-  };
+  const formatDate = (d) => new Date(d).toISOString().split('T')[0];
 
   return (
     <div className="card shadow-sm">
       <div className="card-body">
         <h5 className="card-title">Attendance Dashboard</h5>
 
-        <form className="row g-2 mb-3" onSubmit={handleSearch}>
+        <form
+          className="row g-2 mb-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            fetchData();
+          }}
+        >
           <div className="col-6">
             <input
               className="form-control"
               placeholder="Search name or ID"
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <div className="col-4">
@@ -70,7 +75,7 @@ export default function Dashboard() {
               type="date"
               className="form-control"
               value={dateFilter}
-              onChange={e => setDateFilter(e.target.value)}
+              onChange={(e) => setDateFilter(e.target.value)}
             />
           </div>
           <div className="col-2 d-grid">
@@ -105,8 +110,8 @@ export default function Dashboard() {
                 {records.map((r) => (
                   <tr key={r.id}>
                     <td>{formatDate(r.date)}</td>
-                    <td>{r.employeeName}</td>
-                    <td>{r.employeeID}</td>
+                    <td>{r.employee_name}</td>
+                    <td>{r.employee_id}</td>
                     <td>{r.status}</td>
                     <td>
                       <button
