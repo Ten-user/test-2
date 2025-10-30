@@ -7,7 +7,7 @@ export default function AttendanceForm() {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [status, setStatus] = useState('Present');
   const [msg, setMsg] = useState('');
-  const [msgType, setMsgType] = useState('success'); // 'success' or 'error'
+  const [msgType, setMsgType] = useState('success');
 
   const submit = async (e) => {
     e.preventDefault();
@@ -19,7 +19,7 @@ export default function AttendanceForm() {
     }
 
     try {
-      await api.post('/attendance', { employeeName, employeeID, date, status });
+      await api.post('', { employeeName, employeeID, date, status });
       setMsgType('success');
       setMsg('Attendance recorded.');
       setEmployeeName('');
@@ -34,19 +34,14 @@ export default function AttendanceForm() {
     }
   };
 
-  // Real-time input handlers
   const handleNameChange = (e) => {
     const value = e.target.value;
-    // Only letters and spaces allowed
-    const filtered = value.replace(/[^a-zA-Z\s]/g, '');
-    setEmployeeName(filtered);
+    setEmployeeName(value.replace(/[^a-zA-Z\s]/g, ''));
   };
 
   const handleIDChange = (e) => {
     const value = e.target.value;
-    // Only numbers allowed
-    const filtered = value.replace(/[^0-9]/g, '');
-    setEmployeeID(filtered);
+    setEmployeeID(value.replace(/[^0-9]/g, ''));
   };
 
   return (
